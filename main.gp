@@ -10,7 +10,7 @@ decodegln(m, n)={
   V = vector(n * n, i, 0);
   k = 1;
   for(i = 1, n, for(j = 1, n, V[k] = if(m[i,j] == 0, 32, m[i,j] + 96); k += 1));  
-  Strchr(V);
+  Strchr(vecextract(V, "1..143"));
 }
 
 \\ algo d'exponentiation rapide itératif
@@ -46,8 +46,7 @@ mat_root(M,k)={ \\ k: nombre d'itérations
 ordreIdempotence(M, p) = {
     \\ L'ordre du groupe est product(27^12 - 27^k , k = 0 .. 11) = 125710791285604678382440447016150453040087085604527013876459165108951082279749262734927264400156938203820131742120111369101530910473068953664344868516622552271864320618748133936132438224326079460048633856000
     \\ l'élément M du groupe divise l'ordre du groupe,
-    \\ peut-être qu'un algo bien paramétré tirant des diviseurs de l'ordre de 6 chiffres
-    \\ (correspond au nombre de chiffre de la solution recherchée) pourrait diminuer le temps de calcul.
+    \\ on pourrait élever la matrice à la puissance chaque diviseur de l'ordre de ce groupe, bien que très lent
     R=Mod(M,p);
     k = 1;
     id = Mod(matid(12), p);
@@ -62,9 +61,10 @@ C=Mod(encodegln(ciphertext,12), 27);
 
 
 
-\\o=531432;
+\\ On obtient C^o=(M^65537)^o=M^(65537*o)=Id
+\\ De la relation de Bezout 65537u+ov=1 => 65537u=1-ov
+\\ On en tire : C^u = M^(65537*u)=M^(1-ov)=M.M^(ov)=M.Id=M
 o = ordreIdempotence(C, 27);
-rem=bezout(65537,o)[1]; \\ inverse modulaire de l'ordre d'idempotence via l'algo d'Euclide étendu
-\\C = mat_rt(C, 1000);
-C = C^rem;
+u=bezout(65537, o)[1];
+C = fast_exp(C, u);
 print(decodegln(lift(C),12));
